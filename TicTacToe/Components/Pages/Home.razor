@@ -1,0 +1,105 @@
+@page "/"
+@rendermode InteractiveServer
+@using TicTacToe.Services
+
+<div class="game">
+    <header class="brand-header">
+        <div class="brand-mark" aria-hidden="true">FC</div>
+        <div class="brand-copy">
+            <span class="brand-eyebrow">Flightcrew / Flight 001</span>
+            <h1>Tic-Tac-Toe</h1>
+        </div>
+    </header>
+
+    <div class="scores">
+        <span>Human wins: @humanWins</span>
+        <span>Computer wins: @computerWins</span>
+        <span>Draws: @draws</span>
+    </div>
+
+    <div class="status" role="status">@StatusText</div>
+
+    <div class="board" aria-label="Tic-tac-toe board">
+        @for (var cell = 0; cell < 9; cell++)
+        {
+            var index = cell;
+            <button id="cell-@index"
+                    aria-label="cell-@index"
+                    class="cell"
+                    type="button"
+                    @onclick="() => Play(index)">
+                @(game.Board[index] == Mark.X ? "X" :
+                    game.Board[index] == Mark.O ? "O" : "")
+            </button>
+        }
+    </div>
+
+    @if (game.Outcome != GameOutcome.InProgress)
+    {
+        <button class="rematch" type="button" @onclick="Rematch">Rematch</button>
+    }
+</div>
+
+@code {
+    private readonly TicTacToeGame game = new();
+
+    private int humanWins;
+    private int computerWins;
+    private int draws;
+
+    private string StatusText => game.Outcome switch
+    {
+        GameOutcome.XWins => "Winner: X",
+        GameOutcome.OWins => "Winner: O",
+        GameOutcome.Draw => "Draw",
+        _ => game.CurrentPlayer == Mark.X
+            ? "Current player: X"
+            : "Current player: O"
+    };
+
+    private void Play(int cell)
+    {
+        if (game.Outcome != GameOutcome.InProgress)
+        {
+            return;
+        }
+
+        var outcomeBeforeMove = game.Outcome;
+        var moved = game.TryHumanMove(cell);
+        if (!moved)
+        {
+            return;
+        }
+
+        if (game.Outcome == GameOutcome.InProgress)
+        {
+            game.TryComputerMove();
+        }
+
+        if (outcomeBeforeMove == GameOutcome.InProgress)
+        {
+            RecordOutcome();
+        }
+    }
+
+    private void RecordOutcome()
+    {
+        switch (game.Outcome)
+        {
+            case GameOutcome.XWins:
+                humanWins++;
+                break;
+            case GameOutcome.OWins:
+                computerWins++;
+                break;
+            case GameOutcome.Draw:
+                draws++;
+                break;
+        }
+    }
+
+    private void Rematch()
+    {
+        game.Reset();
+    }
+}
